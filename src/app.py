@@ -11,6 +11,11 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database_dev.db'
 db.init_app(app)
 Migrate(app, db) # db init, db migrate, db upgrade
 
+
+@app.route('/')
+def main():
+    return jsonify({ "msg": "WELCOME TO SWAPI REST FLASK" }), 200
+
 @app.route('/api/people', methods=['GET'])
 def get_character():
     characters = Character.query.all()
@@ -72,8 +77,8 @@ def create_planets():
     planet.surface_water = data['surface_water']
     planet.population = data['population']
 
-    db.session.add(planet) # INSERT INTO todos (label, done) VALUES ('My First Task', false);
-    db.session.commit() # Finaliza el query
+    db.session.add(planet) 
+    db.session.commit() 
 
     return jsonify(planet.serialize()), 201
 
@@ -103,6 +108,8 @@ def create_users():
     user.password = data['password']
     user.name = data['name']
     user.lastname = data['lastname']
+    
+
 
     db.session.add(user) # INSERT INTO todos (label, done) VALUES ('My First Task', false);
     db.session.commit() # Finaliza el query
@@ -116,6 +123,32 @@ def delete_users_by_id(user_id):
     db.session.commit()
     return jsonify(user.serialize()), 200
 
+@app.route('/api/favorite/planet/<int:id>', methods=['PUT'])
+def favorite_planets_update(id):
+
+    username = request.json.get('name')
+    planets_favorite = request.json.get('planets_favorite')
+
+    user = User.query.get(id)
+    #user.username = username
+    #user.password = generate_password_hash(password)
+
+    if planets_favorite:
+        for planet in user.planets_favorites:
+            if not planet.id in planets_favorite:
+                user.planets_favorites.remove(planet)
+
+        for planet in planets_favorite:
+            new_planet = Planet.query.get(planet)
+            if not new_planet in user.planets_favorites:
+                user.planets_favorites.append(new_planet)
+
+    db.session.commit()
+
+
+    return jsonify(user.serialize()), 200
+
 
 if __name__ == '__main__':
     app.run()    
+
